@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 
 def convert_to_api_input(data_path, api_input_path, constraint_type):
-
+    print("Inside convert_to_api_input")
     with open(os.path.join(data_path, "{}_constraints.json".format(constraint_type)), 'r', encoding='utf-8') as input_file:
         input_data = json.load(input_file)
 
@@ -22,6 +22,49 @@ def convert_to_api_input(data_path, api_input_path, constraint_type):
         for d in input_data:
             if d['level'] > 0:
                 output_file.write(json.dumps({'prompt_new': d['instruction']})+ "\n")
+
+def convert_to_api_input_nl(data_path, api_input_path, constraint_type):
+    print("Inside convert_to_api_input_nl")
+    with open(os.path.join(data_path, "{}_constraints.json".format(constraint_type)), 'r', encoding='utf-8') as input_file:
+        input_data = json.load(input_file)
+
+    # check if the data format is correct
+    num = 0
+    for i in range(len(input_data)):
+        if constraint_type != 'example':
+            assert i % 6 == input_data[i]['level']
+        if input_data[i]['level'] > 0:
+            assert input_data[i]['instruction'] != ""
+            num += 1
+    print(f"\n[{constraint_type}] number of examples: {num}")
+
+    nl_string = "\nThink step by step and in the end, finish your response with 'Response:$RESPONSE' where $RESPONSE (without quotes) is the final output expected."
+    with open(os.path.join(api_input_path, "{}_constraint.jsonl".format(constraint_type)), 'w', encoding='utf-8') as output_file:
+        for d in input_data:
+            if d['level'] > 0:
+                output_file.write(json.dumps({'prompt_new': d['instruction'] + nl_string})+ "\n")
+
+
+def convert_to_api_input_pc_cot(data_path, api_input_path, constraint_type):
+    print("Inside convert_to_api_input_pc_cot")
+    with open(os.path.join(data_path, "{}_constraints.json".format(constraint_type)), 'r', encoding='utf-8') as input_file:
+        input_data = json.load(input_file)
+
+    # check if the data format is correct
+    num = 0
+    for i in range(len(input_data)):
+        if constraint_type != 'example':
+            assert i % 6 == input_data[i]['level']
+        if input_data[i]['level'] > 0:
+            assert input_data[i]['instruction'] != ""
+            num += 1
+    print(f"\n[{constraint_type}] number of examples: {num}")
+
+    pc_cot_sting = "\nGenerate pseudocode chain-of-thought reasoning first and then generate the solution."
+    with open(os.path.join(api_input_path, "{}_constraint.jsonl".format(constraint_type)), 'w', encoding='utf-8') as output_file:
+        for d in input_data:
+            if d['level'] > 0:
+                output_file.write(json.dumps({'prompt_new': d['instruction'] + pc_cot_sting})+ "\n")
 
 
 
