@@ -61,7 +61,8 @@ def post_process_pc_cot(text):
     if match:
         return match.group(1).strip()
 
-    return ""
+    # return "" ---- llm-eval-harness
+    return text
 
 @torch.inference_mode()
 def inference(args):
@@ -117,10 +118,10 @@ def inference(args):
                 output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
             )
 
-            # print("-"*50)
-            # print("ORIGINAL OUTPUT") 
-            # print(outputs)
-            # print("-"*50)
+            print("-"*50)
+            print("ORIGINAL OUTPUT") 
+            print(outputs)
+            print("-"*50)
 
             # outputs is string
             if args.lang == "nl":
@@ -132,10 +133,10 @@ def inference(args):
             data[i]['choices'] = [{'message': {'content': ""}}]
             data[i]['choices'][0]['message']['content'] = outputs
 
-            # print("-"*50)
-            # print("POST PROCESSED OUTPUT") # String
-            # print(outputs)
-            # print("-"*50)
+            print("-"*50)
+            print("POST PROCESSED OUTPUT") # String
+            print(outputs)
+            print("-"*50)
 
         # save file
         os.makedirs(f"{args.api_output_path}/{args.model_path}", exist_ok=True)
