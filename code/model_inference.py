@@ -10,43 +10,48 @@ from fastchat.model import load_model, get_conversation_template, add_model_args
 from utils import convert_to_api_input, convert_to_api_input_nl, convert_to_api_input_pc_cot
 
 def postprocess_output_help(prediction: str):
-    """
-    Post-process ground truth or prediction strings.
 
-    Parameters:
-        prediction (str): String corresponding to ground truth or LLM prediction
+    return prediction
+    # """
+    # Post-process ground truth or prediction strings.
 
-    Return:
-        str: post-processed output
-    """
-    llmoutput = str(copy.deepcopy(prediction))
-    llmoutput = llmoutput.replace("[", "")
-    llmoutput = llmoutput.replace("]", "")
-    llmoutput = llmoutput.replace("$", "")
-    llmoutput = llmoutput.replace("'", "")
-    if llmoutput.endswith("."):
-        llmoutput = llmoutput[:-1]
-    llmoutput = llmoutput.strip()
-    return llmoutput
+    # Parameters:
+    #     prediction (str): String corresponding to ground truth or LLM prediction
+
+    # Return:
+    #     str: post-processed output
+    # """
+    # llmoutput = str(copy.deepcopy(prediction))
+    # llmoutput = llmoutput.replace("[", "")
+    # llmoutput = llmoutput.replace("]", "")
+    # llmoutput = llmoutput.replace("$", "")
+    # llmoutput = llmoutput.replace("'", "")
+    # if llmoutput.endswith("."):
+    #     llmoutput = llmoutput[:-1]
+    # llmoutput = llmoutput.strip()
+    # return llmoutput
 
 
 def post_process_nl(text):
-    print("Post processing NL ....")
-    if "Response:" not in text:
-        strict_response_prediction = postprocess_output_help(text.strip())
-        truncated_output = text.rsplit("\n", 1)[-1]
-        if "answer is:" in truncated_output:
-            truncated_output = truncated_output.rsplit("answer is:", 1)[-1]
-        elif "answer is :" in truncated_output:
-            truncated_output = truncated_output.rsplit("answer is :", 1)[-1]
-        loose_response_prediction = postprocess_output_help(truncated_output.strip())
-    else:
-        strict_response_prediction = postprocess_output_help(
-            text.split("Response:")[-1].strip()
-        )
-        loose_response_prediction = strict_response_prediction
-    # return strict_response_prediction, loose_response_prediction
-    return loose_response_prediction
+    print("Not Post processing NL ....")
+    print("Running in default setting ....")
+    return text
+    # print("Post processing NL ....")
+    # if "Response:" not in text:
+    #     strict_response_prediction = postprocess_output_help(text.strip())
+    #     truncated_output = text.rsplit("\n", 1)[-1]
+    #     if "answer is:" in truncated_output:
+    #         truncated_output = truncated_output.rsplit("answer is:", 1)[-1]
+    #     elif "answer is :" in truncated_output:
+    #         truncated_output = truncated_output.rsplit("answer is :", 1)[-1]
+    #     loose_response_prediction = postprocess_output_help(truncated_output.strip())
+    # else:
+    #     strict_response_prediction = postprocess_output_help(
+    #         text.split("Response:")[-1].strip()
+    #     )
+    #     loose_response_prediction = strict_response_prediction
+    # # return strict_response_prediction, loose_response_prediction
+    # return loose_response_prediction
 
 def post_process_pc_cot(text):
     print("Post processing PC-COT ....")
@@ -66,7 +71,6 @@ def post_process_pc_cot(text):
 
 @torch.inference_mode()
 def inference(args):
-    print("Starting Inference ...")
     # Load model
     model, tokenizer = load_model(
         args.model_path,
@@ -92,9 +96,6 @@ def inference(args):
         for i in tqdm(range(len(data)), desc="Processing"):
             # Build the prompt with a conversation template
             msg = data[i]['prompt_new']
-            print("*"*50)
-            print(f"MSG : {msg}")
-            print("*"*50)
             conv = get_conversation_template(args.model_path)
             conv.append_message(conv.roles[0], msg)
             conv.append_message(conv.roles[1], None)
@@ -118,29 +119,37 @@ def inference(args):
                 output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
             )
 
-            print("-"*50)
-            print("ORIGINAL OUTPUT") 
-            print(outputs)
-            print("-"*50)
-
             # outputs is string
             if args.lang == "nl":
                 outputs = post_process_nl(outputs)
             elif args.lang == "pc_cot":
                 outputs = post_process_pc_cot(outputs)
             else:
-                print("Default inference path ...")
+                print("Default inference setting ...")
+            
             data[i]['choices'] = [{'message': {'content': ""}}]
             data[i]['choices'][0]['message']['content'] = outputs
 
-            print("-"*50)
-            print("POST PROCESSED OUTPUT") # String
-            print(outputs)
-            print("-"*50)
 
         # save file
-        os.makedirs(f"{args.api_output_path}/{args.model_path}", exist_ok=True)
-        with open(os.path.join(args.api_output_path, f"{args.model_path}/{constraint_type}_constraint.jsonl"), 'w', encoding='utf-8') as output_file:
+        # os.makedirs(f"{args.api_output_path}/{args.model_path}", exist_ok=True)
+        # with open(os.path.join(args.api_output_path, f"{args.model_path}/{constraint_type}_constraint.jsonl"), 'w', encoding='utf-8') as output_file:
+        #     for d in data:
+        #         output_file.write(json.dumps(d) + "\n")
+
+        # Create full directory if it doesn't exist
+        # Not using args.model_path as it is absolute path
+        # When an absolute path is passed to os.path.join, it ignores all previous paths
+        last_two = os.path.join(*args.model_path.rstrip('/').split(os.sep)[-2:])
+        save_dir = os.path.join(args.api_output_path, last_two)
+        os.makedirs(save_dir, exist_ok=True)
+
+        # Save file
+        save_file_path = os.path.join(save_dir, f"{constraint_type}_constraint.jsonl")
+
+        print(f"Save Directory : {save_dir}")
+        print(f"Save File Path : {save_file_path}")
+        with open(save_file_path, 'w', encoding='utf-8') as output_file:
             for d in data:
                 output_file.write(json.dumps(d) + "\n")
 

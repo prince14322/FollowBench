@@ -38,7 +38,8 @@ def convert_to_api_input_nl(data_path, api_input_path, constraint_type):
             num += 1
     print(f"\n[{constraint_type}] number of examples: {num}")
 
-    nl_string = "\nThink step by step and in the end, finish your response with 'Response:$RESPONSE' where $RESPONSE (without quotes) is the final output expected."
+    # nl_string = "\nThink step by step and in the end, finish your response with 'Response:$RESPONSE' where $RESPONSE (without quotes) is the final output expected."
+    nl_string = ""
     with open(os.path.join(api_input_path, "{}_constraint.jsonl".format(constraint_type)), 'w', encoding='utf-8') as output_file:
         for d in input_data:
             if d['level'] > 0:
