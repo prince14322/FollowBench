@@ -8,16 +8,47 @@ logger = logging.getLogger(__name__)
 
 from gpt4_based_evaluation import acquire_discriminative_eval_input
 from openai import OpenAI
+from openai import AzureOpenAI
 
 MAX_API_RETRY = 5
+
+# def get_eval(user_prompt: str, max_tokens: int, api_key: str):
+#     logging.basicConfig(level=logging.INFO)
+#     for i in range(MAX_API_RETRY):
+#         try:
+#             client = OpenAI(api_key=api_key)
+#             response = client.chat.completions.create(
+#                 model='gpt-4o-mini',
+#                 max_tokens=max_tokens,
+#                 temperature=0.0,
+#                 messages=[{
+#                     'role': 'user',
+#                     'content': user_prompt,
+#                 }],
+#             )
+#             content = response.choices[0].message.content
+#             logger.info(content)
+#             return content
+#         except Exception as e:
+#             logger.error(e)
+#     logger.error(f'Failed after {MAX_API_RETRY} retries.')
+#     return 'error'
+
+import os
+
+azure_endpoint = os.environ.get("AZURE_ENDPOINT")
 
 def get_eval(user_prompt: str, max_tokens: int, api_key: str):
     logging.basicConfig(level=logging.INFO)
     for i in range(MAX_API_RETRY):
         try:
-            client = OpenAI(api_key=api_key)
+            client = AzureOpenAI(
+                azure_endpoint=azure_endpoint,
+                api_key=api_key,
+                api_version="2024-08-01-preview"
+            )
             response = client.chat.completions.create(
-                model='gpt-4o-mini',
+                model='gpt-4o-2024-08-06',
                 max_tokens=max_tokens,
                 temperature=0.0,
                 messages=[{
@@ -34,6 +65,8 @@ def get_eval(user_prompt: str, max_tokens: int, api_key: str):
     return 'error'
 
 
+
+
 def get_json_list(file_path):
     file_path = os.path.expanduser(file_path)
     with open(file_path, 'r') as f:
@@ -47,6 +80,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='LLM-based evaluation.')
 
     parser.add_argument('--api_key', type=str, required=True)
+    parser.add_argument('--azure_endpoint', type=str, required=True)
     parser.add_argument('--max_tokens', type=int, default=1024, help='maximum number of tokens produced in the output')
     parser.add_argument("--model_path", type=str, required=True)
     parser.add_argument("--constraint_types", nargs='+', type=str, default=['content', 'situation', 'style', 'format', 'mixed'])

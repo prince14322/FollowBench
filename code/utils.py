@@ -81,11 +81,11 @@ def data_match_api_output(data_path, api_output_path, constraint_type, model_nam
     # match
     for i in range(len(data)):
         for j in range(len(output)):
-            if data[i]['instruction'] == output[j]['prompt']:
+            if data[i]['instruction'] == output[j]['prompt_new']:
                 data[i]['generation'] = output[j]['choices'][0]['message']['content']
                 break
-            if j == len(output)-1 and data[i]['level'] != 0 and data[i]['instruction'] != output[j]['prompt']:
-                print(i)
+            if j == len(output)-1 and data[i]['level'] != 0 and data[i]['instruction'] != output[j]['prompt_new']:
+                print("--",i)
 
     return data
 
